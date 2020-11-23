@@ -16,21 +16,20 @@
  */
 package com.alibaba.nacos.spring.context.annotation.config;
 
+import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
+import static com.alibaba.nacos.embedded.web.server.NacosConfigHttpHandler.CONTENT_PARAM_NAME;
+import static com.alibaba.nacos.embedded.web.server.NacosConfigHttpHandler.DATA_ID_PARAM_NAME;
+import static com.alibaba.nacos.embedded.web.server.NacosConfigHttpHandler.GROUP_ID_PARAM_NAME;
+
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import com.alibaba.nacos.api.annotation.NacosInjected;
-import com.alibaba.nacos.api.annotation.NacosProperties;
-import com.alibaba.nacos.api.config.ConfigService;
-import com.alibaba.nacos.api.config.annotation.NacosValue;
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.embedded.web.server.EmbeddedNacosHttpServer;
-import com.alibaba.nacos.spring.context.annotation.EnableNacos;
-import com.alibaba.nacos.spring.test.AbstractNacosHttpServerTestExecutionListener;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -42,10 +41,14 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 import org.springframework.test.context.support.DirtiesContextTestExecutionListener;
 
-import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
-import static com.alibaba.nacos.embedded.web.server.NacosConfigHttpHandler.CONTENT_PARAM_NAME;
-import static com.alibaba.nacos.embedded.web.server.NacosConfigHttpHandler.DATA_ID_PARAM_NAME;
-import static com.alibaba.nacos.embedded.web.server.NacosConfigHttpHandler.GROUP_ID_PARAM_NAME;
+import com.alibaba.nacos.api.annotation.NacosInjected;
+import com.alibaba.nacos.api.annotation.NacosProperties;
+import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.api.config.annotation.NacosValue;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.embedded.web.server.EmbeddedNacosHttpServer;
+import com.alibaba.nacos.spring.test.AbstractNacosHttpServerTestExecutionListener;
+import com.alibaba.nacos.spring.util.NacosUtils;
 
 /**
  * {@link NacosPropertySource} {@link Value} Test
@@ -61,7 +64,7 @@ import static com.alibaba.nacos.embedded.web.server.NacosConfigHttpHandler.GROUP
 		DirtiesContextTestExecutionListener.class, NacosPropertySourceTest.class })
 @NacosPropertySources({
 		@NacosPropertySource(dataId = NacosPropertySourceTest.DATA_ID, autoRefreshed = true) })
-@EnableNacos(globalProperties = @NacosProperties(serverAddr = "${server.addr}", enableRemoteSyncConfig = "true", maxRetry = "5", configRetryTime = "2600", configLongPollTimeout = "26000"))
+@EnableNacosConfig(readConfigTypeFromDataId = false, globalProperties = @NacosProperties(serverAddr = "${server.addr}", enableRemoteSyncConfig = "true", maxRetry = "5", configRetryTime = "2600", configLongPollTimeout = "26000"))
 @Component
 public class NacosPropertySourceTest
 		extends AbstractNacosHttpServerTestExecutionListener {
@@ -69,22 +72,32 @@ public class NacosPropertySourceTest
 	public static final String DATA_ID = "app";
 	private static final String LINE_SEPARATOR = System.getProperty("line.separator");
 	private static final String APP_NAME = "Nacos-Spring";
-
 	private static final String ANOTHER_APP_NAME = "Nacos-Spring-1";
-
 	private static final int VALUE_1 = 1;
-
 	private static final int VALUE_2 = 2;
-
 	private static final int VALUE_3 = 3;
-
 	private static final int VALUE_4 = 4;
+	private static final String VALUE_5 = "zhangsan";
+	private static final String VALUE_6 = "lisi";
+	private static final String VALUE_7 = "wangwu";
+	private static final String VALUE_8 = "zhaoliu";
+
 	@NacosInjected
 	private ConfigService configService;
 	@Autowired
 	private App app;
 	@Autowired
 	private Environment environment;
+
+	@BeforeClass
+	public static void beforeClass() {
+		NacosUtils.resetReadTypeFromDataId();
+	}
+
+	@AfterClass
+	public static void afterClass() {
+		NacosUtils.resetReadTypeFromDataId();
+	}
 
 	@Override
 	public void init(EmbeddedNacosHttpServer httpServer) {
@@ -94,7 +107,8 @@ public class NacosPropertySourceTest
 
 		config.put(CONTENT_PARAM_NAME, "app.name=" + APP_NAME + LINE_SEPARATOR
 				+ "app.nacosFieldIntValueAutoRefreshed=" + VALUE_1 + LINE_SEPARATOR
-				+ "app.nacosMethodIntValueAutoRefreshed=" + VALUE_2);
+				+ "app.nacosMethodIntValueAutoRefreshed=" + VALUE_2 + LINE_SEPARATOR
+				+ "app.nacosFieldListValueAutoRefreshed=" + VALUE_5 + "," + VALUE_6);
 		httpServer.initConfig(config);
 	}
 
@@ -126,13 +140,20 @@ public class NacosPropertySourceTest
 
 		Assert.assertEquals(VALUE_2, app.nacosMethodIntValue);
 
+		Assert.assertEquals(VALUE_5, app.nacosFieldListValue.get(0));
+		Assert.assertEquals(VALUE_6, app.nacosFieldListValue.get(1));
+
 		Assert.assertEquals(VALUE_1, app.nacosFieldIntValueAutoRefreshed);
 
 		Assert.assertEquals(VALUE_2, app.nacosMethodIntValueAutoRefreshed);
 
+		Assert.assertEquals(VALUE_5, app.nacosFieldListValueAutoRefreshed.get(0));
+		Assert.assertEquals(VALUE_6, app.nacosFieldListValueAutoRefreshed.get(1));
+
 		configService.publishConfig(DATA_ID, DEFAULT_GROUP, "app.name=" + ANOTHER_APP_NAME
 				+ LINE_SEPARATOR + "app.nacosFieldIntValueAutoRefreshed=" + VALUE_3
-				+ LINE_SEPARATOR + "app.nacosMethodIntValueAutoRefreshed=" + VALUE_4);
+				+ LINE_SEPARATOR + "app.nacosMethodIntValueAutoRefreshed=" + VALUE_4
+				+ LINE_SEPARATOR + "app.nacosFieldListValueAutoRefreshed=" + VALUE_7 + "," + VALUE_8);
 
 		Thread.sleep(1000);
 
@@ -152,9 +173,16 @@ public class NacosPropertySourceTest
 
 		Assert.assertEquals(VALUE_2, app.nacosMethodIntValue);
 
+		Assert.assertEquals(VALUE_5, app.nacosFieldListValue.get(0));
+		Assert.assertEquals(VALUE_6, app.nacosFieldListValue.get(1));
+
 		Assert.assertEquals(VALUE_3, app.nacosFieldIntValueAutoRefreshed);
 
 		Assert.assertEquals(VALUE_4, app.nacosMethodIntValueAutoRefreshed);
+
+		Assert.assertEquals(VALUE_7, app.nacosFieldListValueAutoRefreshed.get(0));
+		Assert.assertEquals(VALUE_8, app.nacosFieldListValueAutoRefreshed.get(1));
+
 	}
 
 	public static class App {
@@ -182,6 +210,12 @@ public class NacosPropertySourceTest
 
 		private int nacosMethodIntValue;
 		private int nacosMethodIntValueAutoRefreshed;
+
+		@NacosValue(value = "#{'${app.nacosFieldListValue:" + VALUE_5 + "," + VALUE_6 + "}'.split(',')}")
+		private List nacosFieldListValue;
+
+		@NacosValue(value = "#{'${app.nacosFieldListValueAutoRefreshed}'.split(',')}", autoRefreshed = true)
+		private List nacosFieldListValueAutoRefreshed;
 
 		@NacosValue("${app.nacosMethodIntValue:" + VALUE_2 + "}")
 		public void setNacosMethodIntValue(int nacosMethodIntValue) {

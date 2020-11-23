@@ -14,10 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.spring.context.event.config;
 
 import java.util.Properties;
 import java.util.concurrent.Executor;
+
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.Listener;
@@ -25,16 +30,14 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.spring.context.event.DeferredApplicationEventPublisher;
 import com.alibaba.nacos.spring.metadata.NacosServiceMetaData;
 
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.ConfigurableApplicationContext;
-
 /**
- * {@link NacosConfigEvent Event} publishing {@link ConfigService}
+ * {@link NacosConfigEvent Event} publishing {@link ConfigService}.
  *
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
  * @since 0.1.0
  */
-public class EventPublishingConfigService implements ConfigService, NacosServiceMetaData {
+public class EventPublishingConfigService
+		implements ConfigService, NacosServiceMetaData, DisposableBean {
 
 	private final ConfigService configService;
 
@@ -79,13 +82,13 @@ public class EventPublishingConfigService implements ConfigService, NacosService
 
 	/**
 	 * Implementation of the new version of support for multiple configuration file type
-	 * resolution
+	 * resolution.
 	 *
 	 * @param dataId dataId
 	 * @param group group
 	 * @param type config's type
 	 * @param listener listener
-	 * @throws NacosException
+	 * @throws NacosException NacosException
 	 */
 	public void addListener(String dataId, String group, String type, Listener listener)
 			throws NacosException {
@@ -130,6 +133,11 @@ public class EventPublishingConfigService implements ConfigService, NacosService
 		return configService.getServerStatus();
 	}
 
+	@Override
+	public void shutDown() throws NacosException {
+		configService.shutDown();
+	}
+
 	private void publishEvent(NacosConfigEvent nacosConfigEvent) {
 		applicationEventPublisher.publishEvent(nacosConfigEvent);
 	}
@@ -137,5 +145,15 @@ public class EventPublishingConfigService implements ConfigService, NacosService
 	@Override
 	public Properties getProperties() {
 		return properties;
+	}
+
+	/**
+	 * Destroy lifecycle method to invoke {@link #shutDown()}
+	 * @throws Exception
+	 * @since 1.0.0
+	 */
+	@Override
+	public void destroy() throws Exception {
+		shutDown();
 	}
 }

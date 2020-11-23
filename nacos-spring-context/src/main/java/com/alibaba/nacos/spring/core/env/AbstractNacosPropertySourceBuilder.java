@@ -16,20 +16,27 @@
  */
 package com.alibaba.nacos.spring.core.env;
 
+import static com.alibaba.nacos.spring.context.annotation.config.NacosPropertySource.CONFIG_TYPE_ATTRIBUTE_NAME;
+import static com.alibaba.nacos.spring.context.annotation.config.NacosPropertySource.DATA_ID_ATTRIBUTE_NAME;
+import static com.alibaba.nacos.spring.context.annotation.config.NacosPropertySource.GROUP_ID_ATTRIBUTE_NAME;
+import static com.alibaba.nacos.spring.context.annotation.config.NacosPropertySource.NAME_ATTRIBUTE_NAME;
+import static com.alibaba.nacos.spring.context.annotation.config.NacosPropertySource.PROPERTIES_ATTRIBUTE_NAME;
+import static com.alibaba.nacos.spring.util.GlobalNacosPropertiesSource.CONFIG;
+import static com.alibaba.nacos.spring.util.NacosBeanUtils.getNacosServiceFactoryBean;
+import static com.alibaba.nacos.spring.util.NacosUtils.buildDefaultPropertySourceName;
+import static com.alibaba.nacos.spring.util.NacosUtils.resolveProperties;
+import static com.alibaba.spring.util.ClassUtils.resolveGenericType;
+import static java.lang.String.format;
+import static org.springframework.util.ClassUtils.resolveClassName;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import com.alibaba.nacos.api.config.ConfigType;
-import com.alibaba.nacos.spring.context.event.DeferredApplicationEventPublisher;
-import com.alibaba.nacos.spring.context.event.config.NacosConfigMetadataEvent;
-import com.alibaba.nacos.spring.util.NacosUtils;
-import com.alibaba.nacos.spring.util.config.NacosConfigLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.BeanFactory;
@@ -46,18 +53,11 @@ import org.springframework.core.env.Environment;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import static com.alibaba.nacos.spring.context.annotation.config.NacosPropertySource.CONFIG_TYPE_ATTRIBUTE_NAME;
-import static com.alibaba.nacos.spring.context.annotation.config.NacosPropertySource.DATA_ID_ATTRIBUTE_NAME;
-import static com.alibaba.nacos.spring.context.annotation.config.NacosPropertySource.GROUP_ID_ATTRIBUTE_NAME;
-import static com.alibaba.nacos.spring.context.annotation.config.NacosPropertySource.NAME_ATTRIBUTE_NAME;
-import static com.alibaba.nacos.spring.context.annotation.config.NacosPropertySource.PROPERTIES_ATTRIBUTE_NAME;
-import static com.alibaba.nacos.spring.util.GlobalNacosPropertiesSource.CONFIG;
-import static com.alibaba.nacos.spring.util.NacosBeanUtils.getNacosServiceFactoryBean;
-import static com.alibaba.nacos.spring.util.NacosUtils.buildDefaultPropertySourceName;
-import static com.alibaba.nacos.spring.util.NacosUtils.resolveProperties;
-import static com.alibaba.spring.util.ClassUtils.resolveGenericType;
-import static java.lang.String.format;
-import static org.springframework.util.ClassUtils.resolveClassName;
+import com.alibaba.nacos.api.config.ConfigType;
+import com.alibaba.nacos.spring.context.event.DeferredApplicationEventPublisher;
+import com.alibaba.nacos.spring.context.event.config.NacosConfigMetadataEvent;
+import com.alibaba.nacos.spring.util.NacosUtils;
+import com.alibaba.nacos.spring.util.config.NacosConfigLoader;
 
 /**
  * Abstract implementation of {@link NacosPropertySource} Builder
@@ -159,13 +159,20 @@ public abstract class AbstractNacosPropertySourceBuilder<T extends BeanDefinitio
 		String name = (String) runtimeAttributes.get(NAME_ATTRIBUTE_NAME);
 		String dataId = (String) runtimeAttributes.get(DATA_ID_ATTRIBUTE_NAME);
 		String groupId = (String) runtimeAttributes.get(GROUP_ID_ATTRIBUTE_NAME);
-		String type = ((ConfigType) runtimeAttributes.get(CONFIG_TYPE_ATTRIBUTE_NAME))
-				.getType();
 
 		dataId = NacosUtils.readFromEnvironment(dataId, environment);
 		groupId = NacosUtils.readFromEnvironment(groupId, environment);
-		type = StringUtils.isEmpty(NacosUtils.readTypeFromDataId(dataId)) ? type
-				: NacosUtils.readTypeFromDataId(dataId);
+
+		String type = null;
+
+		if (NacosUtils.isReadTypeFromDataId()) {
+			type = NacosUtils.readFileExtension(dataId);
+		}
+		else {
+			type = ((ConfigType) runtimeAttributes.get(CONFIG_TYPE_ATTRIBUTE_NAME))
+					.getType();
+		}
+
 		Map<String, Object> nacosPropertiesAttributes = (Map<String, Object>) runtimeAttributes
 				.get(PROPERTIES_ATTRIBUTE_NAME);
 

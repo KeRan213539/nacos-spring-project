@@ -16,23 +16,24 @@
  */
 package com.alibaba.nacos.spring.context.annotation.config;
 
-import java.util.Properties;
-
-import com.alibaba.nacos.spring.factory.NacosServiceFactory;
-import com.alibaba.nacos.spring.util.config.NacosConfigLoader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.PropertiesPropertySource;
-import org.springframework.core.env.PropertySource;
-import org.springframework.util.StringUtils;
-
 import static com.alibaba.nacos.spring.util.NacosBeanUtils.getNacosServiceFactoryBean;
 import static com.alibaba.nacos.spring.util.NacosUtils.buildDefaultPropertySourceName;
 import static com.alibaba.nacos.spring.util.NacosUtils.toProperties;
 import static java.lang.String.format;
+
+import java.util.Map;
+import java.util.Properties;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.PropertySource;
+import org.springframework.util.StringUtils;
+
+import com.alibaba.nacos.spring.factory.NacosServiceFactory;
+import com.alibaba.nacos.spring.util.config.NacosConfigLoader;
 
 /**
  * Nacos {@link PropertySource} Builder
@@ -120,13 +121,13 @@ class NacosPropertySourceBuilder {
 			return null;
 		}
 
-		Properties properties = toProperties(dataId, groupId, config, type);
+		Map<String, Object> properties = toProperties(dataId, groupId, config, type);
 
 		if (!StringUtils.hasText(name)) {
 			name = buildDefaultPropertySourceName(dataId, groupId, properties);
 		}
 
-		return new PropertiesPropertySource(name, properties);
+		return new MapPropertySource(name, properties);
 	}
 
 	public NacosConfigLoader getNacosConfigLoader() {

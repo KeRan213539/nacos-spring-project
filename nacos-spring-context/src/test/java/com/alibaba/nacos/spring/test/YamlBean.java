@@ -16,41 +16,38 @@
  */
 package com.alibaba.nacos.spring.test;
 
-import static com.alibaba.nacos.spring.test.XmlApp.DATA_ID_XML;
-
-import java.util.List;
-
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.annotation.NacosConfigurationProperties;
 
 /**
- * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
- * @since
+ * @author mai.jh
  */
-@NacosConfigurationProperties(dataId = DATA_ID_XML, autoRefreshed = true, ignoreNestedProperties = true, type = ConfigType.XML)
-public class XmlApp {
+@NacosConfigurationProperties(dataId = "yaml_bean.yml", autoRefreshed = true, ignoreNestedProperties = true, type = ConfigType.YAML)
+public class YamlBean {
 
-	public static final String DATA_ID_XML = "xml_app";
+	public static final String DATA_ID_YAML = "yaml_bean";
 
-	private List<Student> students;
+	private Student student;
 
-	public List<XmlApp.Student> getStudents() {
-		return students;
+	public Student getStudent() {
+		return student;
 	}
 
-	public void setStudents(List<XmlApp.Student> students) {
-		this.students = students;
+	public void setStudent(Student student) {
+		this.student = student;
 	}
 
 	@Override
 	public String toString() {
-		return "XmlApp{" + "students=" + students + '}';
+		return "YamlBean{" + "student=" + student + '}';
 	}
 
 	public static class Student {
 
 		private String name;
 		private String num;
+
+		private TestApp testApp;
 
 		public String getName() {
 			return name;
@@ -68,9 +65,35 @@ public class XmlApp {
 			this.num = num;
 		}
 
+		public TestApp getTestApp() {
+			return testApp;
+		}
+
+		public void setTestApp(TestApp testApp) {
+			this.testApp = testApp;
+		}
+
 		@Override
 		public String toString() {
-			return "Student{" + "name='" + name + '\'' + ", num='" + num + '\'' + '}';
+			return "Student{" + "name='" + name + '\'' + ", num='" + num + '\''
+					+ ", testApp=" + testApp + '}';
+		}
+	}
+
+	public static class TestApp {
+		private String name;
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		@Override
+		public String toString() {
+			return "TestApp{" + "name='" + name + '\'' + '}';
 		}
 	}
 

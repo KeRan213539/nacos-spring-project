@@ -16,14 +16,13 @@
  */
 package com.alibaba.nacos.spring.core.env;
 
+import static com.alibaba.nacos.spring.util.NacosUtils.toProperties;
+
 import java.util.Collections;
 import java.util.Map;
-import java.util.Properties;
 
-import org.springframework.core.env.PropertiesPropertySource;
+import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.PropertySource;
-
-import static com.alibaba.nacos.spring.util.NacosUtils.toProperties;
 
 /**
  * Nacos {@link PropertySource}, all read methods are immutable.
@@ -32,7 +31,7 @@ import static com.alibaba.nacos.spring.util.NacosUtils.toProperties;
  * @see com.alibaba.nacos.spring.context.annotation.config.NacosPropertySource
  * @since 0.1.0
  */
-public class NacosPropertySource extends PropertiesPropertySource {
+public class NacosPropertySource extends MapPropertySource {
 
 	private String groupId;
 
@@ -48,7 +47,7 @@ public class NacosPropertySource extends PropertiesPropertySource {
 
 	private String type;
 
-	private Properties properties;
+	private Map<Object, Object> properties;
 
 	private Map<String, Object> attributesMetadata;
 
@@ -58,10 +57,6 @@ public class NacosPropertySource extends PropertiesPropertySource {
 
 	private Class<?> beanType;
 
-	/**
-	 * @param name the name of Nacos {@link PropertySource}
-	 * @param nacosConfig the Nacos Config with {@link Properties} format
-	 */
 	public NacosPropertySource(String dataId, String groupId, String name,
 			String nacosConfig, String type) {
 		super(name, toProperties(dataId, groupId, nacosConfig, type));
@@ -124,11 +119,11 @@ public class NacosPropertySource extends PropertiesPropertySource {
 		this.type = type;
 	}
 
-	public Properties getProperties() {
+	public Map<Object, Object> getProperties() {
 		return properties;
 	}
 
-	public void setProperties(Properties properties) {
+	public void setProperties(Map<Object, Object> properties) {
 		this.properties = properties;
 	}
 

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.spring.context.config.xml;
+package com.alibaba.nacos.spring.context.annotation.config;
 
 import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
 import static com.alibaba.nacos.embedded.web.server.NacosConfigHttpHandler.CONTENT_PARAM_NAME;
@@ -30,40 +30,45 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 import org.springframework.test.context.support.DirtiesContextTestExecutionListener;
 
+import com.alibaba.nacos.api.annotation.NacosInjected;
+import com.alibaba.nacos.api.annotation.NacosProperties;
+import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.embedded.web.server.EmbeddedNacosHttpServer;
 import com.alibaba.nacos.spring.test.AbstractNacosHttpServerTestExecutionListener;
-import com.alibaba.nacos.spring.test.User;
+import com.alibaba.nacos.spring.test.YamlBean;
 import com.alibaba.nacos.spring.util.NacosUtils;
 
 /**
- * {@link NacosPropertySourceBeanDefinitionParser} Test
- *
- * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
- * @see GlobalNacosPropertiesBeanDefinitionParser
- * @see NacosAnnotationDrivenBeanDefinitionParser
- * @since 0.1.0
+ * @author mai.jh
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = { "classpath:/META-INF/nacos-context.xml",
-		"classpath:/META-INF/nacos-property-source.xml" })
-@DirtiesContext
+@ContextConfiguration(classes = { NacosPropertySourceBeanTest.class })
 @TestExecutionListeners({ DependencyInjectionTestExecutionListener.class,
-		DirtiesContextTestExecutionListener.class,
-		NacosPropertySourceBeanDefinitionParserTest.class })
-public class NacosPropertySourceBeanDefinitionParserTest
+		DirtiesContextTestExecutionListener.class, NacosPropertySourceBeanTest.class })
+@NacosPropertySources(value = { @NacosPropertySource(dataId = YamlBean.DATA_ID_YAML
+		+ ".yml", autoRefreshed = true) })
+@EnableNacosConfig(readConfigTypeFromDataId = false, globalProperties = @NacosProperties(serverAddr = "${server.addr}"))
+@Component
+public class NacosPropertySourceBeanTest
 		extends AbstractNacosHttpServerTestExecutionListener {
 
-	private static final Long USER_ID = 1991L;
-	private static final String USER_NAME = "hxy";
+	private String yaml = "student:\n" + "    name: lct-1\n" + "    num: 12\n"
+			+ "    testApp: \n" + "       name: test";
+
+	private String except = "YamlBean{student=Student{name='lct-1', num='12', testApp=TestApp{name='test'}}}";
+	@NacosInjected
+	private ConfigService configService;
 	@Autowired
-	private User user;
+	private YamlBean yamlBean;
 
 	@BeforeClass
 	public static void beforeClass() {
@@ -76,23 +81,34 @@ public class NacosPropertySourceBeanDefinitionParserTest
 	}
 
 	@Override
-	protected void init(EmbeddedNacosHttpServer server) {
+	public void init(EmbeddedNacosHttpServer httpServer) {
 		Map<String, String> config = new HashMap<String, String>(1);
-		config.put(DATA_ID_PARAM_NAME, "user");
+		config.put(DATA_ID_PARAM_NAME, YamlBean.DATA_ID_YAML + ".yml");
 		config.put(GROUP_ID_PARAM_NAME, DEFAULT_GROUP);
-		config.put(CONTENT_PARAM_NAME, "id=" + USER_ID + "\nname=" + USER_NAME);
-		server.initConfig(config);
+		config.put(CONTENT_PARAM_NAME, yaml);
+
+		httpServer.initConfig(config);
+	}
+
+	@Bean
+	public YamlBean yamlBean() {
+		return new YamlBean();
 	}
 
 	@Override
 	protected String getServerAddressPropertyName() {
-		return "nacos.server-addr";
+		return "server.addr";
 	}
 
 	@Test
-	public void testGetConfig() {
-		Assert.assertEquals(USER_ID, user.getId());
-		Assert.assertEquals(USER_NAME, user.getName());
+	public void testValue() throws NacosException, InterruptedException {
+
+		configService.publishConfig(YamlBean.DATA_ID_YAML + ".yml", DEFAULT_GROUP, yaml);
+
+		Thread.sleep(2000);
+
+		Assert.assertEquals(except, yamlBean.toString());
+
 	}
 
 }

@@ -20,15 +20,14 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.Map;
-import java.util.Properties;
+
+import org.springframework.context.ApplicationEvent;
+import org.springframework.core.io.Resource;
+import org.w3c.dom.Element;
 
 import com.alibaba.nacos.api.config.annotation.NacosConfigListener;
 import com.alibaba.nacos.api.config.annotation.NacosConfigurationProperties;
 import com.alibaba.nacos.spring.context.annotation.config.NacosPropertySource;
-import org.w3c.dom.Element;
-
-import org.springframework.context.ApplicationEvent;
-import org.springframework.core.io.Resource;
 
 /**
  * Nacos Config Meta-Data {@link NacosConfigEvent event}
@@ -52,7 +51,7 @@ public class NacosConfigMetadataEvent extends ApplicationEvent {
 
 	private Resource xmlResource;
 
-	private Properties nacosProperties;
+	private Map<Object, Object> nacosProperties;
 
 	private Map<String, Object> nacosPropertiesAttributes;
 
@@ -139,20 +138,20 @@ public class NacosConfigMetadataEvent extends ApplicationEvent {
 	}
 
 	/**
-	 * Actual effective Nacos {@link Properties}
+	 * Actual effective Nacos {@link Map}
 	 *
 	 * @return non-null
 	 */
-	public Properties getNacosProperties() {
+	public Map<Object, Object> getNacosProperties() {
 		return nacosProperties;
 	}
 
-	public void setNacosProperties(Properties nacosProperties) {
+	public void setNacosProperties(Map<Object, Object> nacosProperties) {
 		this.nacosProperties = nacosProperties;
 	}
 
 	/**
-	 * Nacos {@link Properties}'s attributes that may come frome {@link Annotation} or
+	 * Nacos {@link Map}'s attributes that may come frome {@link Annotation} or
 	 * {@link Element XML element}
 	 *
 	 * @return non-null

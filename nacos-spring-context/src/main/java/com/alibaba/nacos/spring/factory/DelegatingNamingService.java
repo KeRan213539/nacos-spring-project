@@ -14,10 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.spring.factory;
 
 import java.util.List;
 import java.util.Properties;
+
+import org.springframework.beans.factory.DisposableBean;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
@@ -29,14 +32,15 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.spring.metadata.NacosServiceMetaData;
 
 /**
- * Delegating {@link NamingService} with {@link NacosServiceMetaData}
+ * Delegating {@link NamingService} with {@link NacosServiceMetaData}.
  *
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
  * @see NamingService
  * @see NacosServiceMetaData
  * @since 0.1.0
  */
-class DelegatingNamingService implements NamingService, NacosServiceMetaData {
+class DelegatingNamingService
+		implements NamingService, NacosServiceMetaData, DisposableBean {
 
 	private final NamingService delegate;
 
@@ -347,7 +351,22 @@ class DelegatingNamingService implements NamingService, NacosServiceMetaData {
 	}
 
 	@Override
+	public void shutDown() throws NacosException {
+		delegate.shutDown();
+	}
+
+	@Override
 	public Properties getProperties() {
 		return properties;
+	}
+
+	/**
+	 * Destroy lifecycle method to invoke {@link #shutDown()}
+	 * @throws Exception
+	 * @since 1.0.0
+	 */
+	@Override
+	public void destroy() throws Exception {
+		shutDown();
 	}
 }

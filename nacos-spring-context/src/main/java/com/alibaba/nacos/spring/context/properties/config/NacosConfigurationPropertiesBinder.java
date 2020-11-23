@@ -16,8 +16,23 @@
  */
 package com.alibaba.nacos.spring.context.properties.config;
 
+import static com.alibaba.nacos.spring.util.NacosBeanUtils.getConfigServiceBeanBuilder;
+import static com.alibaba.nacos.spring.util.NacosUtils.getContent;
+import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
+import static org.springframework.core.annotation.AnnotationUtils.getAnnotationAttributes;
+import static org.springframework.util.StringUtils.hasText;
+
 import java.util.Map;
 import java.util.Properties;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.PropertyValues;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.env.Environment;
+import org.springframework.util.Assert;
+import org.springframework.validation.DataBinder;
 
 import com.alibaba.nacos.api.annotation.NacosProperties;
 import com.alibaba.nacos.api.config.ConfigService;
@@ -33,22 +48,6 @@ import com.alibaba.nacos.spring.context.event.config.NacosConfigMetadataEvent;
 import com.alibaba.nacos.spring.context.event.config.NacosConfigurationPropertiesBeanBoundEvent;
 import com.alibaba.nacos.spring.util.NacosUtils;
 import com.alibaba.nacos.spring.util.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.springframework.beans.PropertyValues;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.core.env.Environment;
-import org.springframework.util.Assert;
-import org.springframework.validation.DataBinder;
-
-import static com.alibaba.nacos.spring.util.NacosBeanUtils.getConfigServiceBeanBuilder;
-import static com.alibaba.nacos.spring.util.NacosUtils.getContent;
-import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
-import static org.springframework.core.annotation.AnnotationUtils.getAnnotationAttributes;
-import static org.springframework.util.StringUtils.hasText;
 
 /**
  * {@link NacosConfigurationProperties} Bean Binder
@@ -102,11 +101,15 @@ public class NacosConfigurationPropertiesBinder {
 				environment);
 		final String groupId = NacosUtils.readFromEnvironment(properties.groupId(),
 				environment);
-		String fileType = NacosUtils.readTypeFromDataId(dataId);
-		final String type = StringUtils.isEmpty(fileType)
-				? (properties.yaml() ? ConfigType.YAML.getType()
-						: properties.type().getType())
-				: fileType;
+		final String type;
+
+		if (NacosUtils.isReadTypeFromDataId()) {
+			type = NacosUtils.readFileExtension(dataId);
+		}
+		else {
+			type = (properties.yaml() ? ConfigType.YAML.getType()
+					: properties.type().getType());
+		}
 
 		final ConfigService configService = configServiceBeanBuilder
 				.build(properties.properties());

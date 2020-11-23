@@ -16,22 +16,15 @@
  */
 package com.alibaba.nacos.spring.context.annotation.config;
 
+import static com.alibaba.nacos.spring.util.GlobalNacosPropertiesSource.CONFIG;
+import static com.alibaba.nacos.spring.util.NacosBeanUtils.getConfigServiceBeanBuilder;
+import static com.alibaba.nacos.spring.util.NacosBeanUtils.getNacosServiceFactoryBean;
+import static org.springframework.beans.BeanUtils.instantiateClass;
+import static org.springframework.core.annotation.AnnotationUtils.getAnnotationAttributes;
+
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Properties;
-
-import com.alibaba.nacos.api.annotation.NacosProperties;
-import com.alibaba.nacos.api.config.ConfigService;
-import com.alibaba.nacos.api.config.annotation.NacosConfigListener;
-import com.alibaba.nacos.api.config.convert.NacosConfigConverter;
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.spring.beans.factory.annotation.ConfigServiceBeanBuilder;
-import com.alibaba.nacos.spring.context.event.AnnotationListenerMethodProcessor;
-import com.alibaba.nacos.spring.context.event.config.NacosConfigMetadataEvent;
-import com.alibaba.nacos.spring.context.event.config.TimeoutNacosConfigListener;
-import com.alibaba.nacos.spring.convert.converter.config.DefaultNacosConfigConverter;
-import com.alibaba.nacos.spring.factory.NacosServiceFactory;
-import com.alibaba.nacos.spring.util.NacosUtils;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanCreationException;
@@ -47,11 +40,18 @@ import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
-import static com.alibaba.nacos.spring.util.GlobalNacosPropertiesSource.CONFIG;
-import static com.alibaba.nacos.spring.util.NacosBeanUtils.getConfigServiceBeanBuilder;
-import static com.alibaba.nacos.spring.util.NacosBeanUtils.getNacosServiceFactoryBean;
-import static org.springframework.beans.BeanUtils.instantiateClass;
-import static org.springframework.core.annotation.AnnotationUtils.getAnnotationAttributes;
+import com.alibaba.nacos.api.annotation.NacosProperties;
+import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.api.config.annotation.NacosConfigListener;
+import com.alibaba.nacos.api.config.convert.NacosConfigConverter;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.spring.beans.factory.annotation.ConfigServiceBeanBuilder;
+import com.alibaba.nacos.spring.context.event.AnnotationListenerMethodProcessor;
+import com.alibaba.nacos.spring.context.event.config.NacosConfigMetadataEvent;
+import com.alibaba.nacos.spring.context.event.config.TimeoutNacosConfigListener;
+import com.alibaba.nacos.spring.convert.converter.config.DefaultNacosConfigConverter;
+import com.alibaba.nacos.spring.factory.NacosServiceFactory;
+import com.alibaba.nacos.spring.util.NacosUtils;
 
 /**
  * {@link NacosConfigListener @NacosConfigListener} {@link Method method} Processor
@@ -97,9 +97,16 @@ public class NacosConfigListenerMethodProcessor
 				environment);
 		final String groupId = NacosUtils.readFromEnvironment(listener.groupId(),
 				environment);
-		final String type = StringUtils.isEmpty(NacosUtils.readTypeFromDataId(dataId))
-				? listener.type().getType()
-				: NacosUtils.readTypeFromDataId(dataId);
+
+		final String type;
+
+		if (NacosUtils.isReadTypeFromDataId()) {
+			type = NacosUtils.readFileExtension(dataId);
+		}
+		else {
+			type = listener.type().getType();
+		}
+
 		long timeout = listener.timeout();
 
 		Assert.isTrue(StringUtils.hasText(dataId), "dataId must have content");

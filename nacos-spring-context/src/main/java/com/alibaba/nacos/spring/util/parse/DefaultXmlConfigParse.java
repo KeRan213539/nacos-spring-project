@@ -21,18 +21,17 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import com.alibaba.nacos.api.config.ConfigType;
-import com.alibaba.nacos.spring.util.AbstractConfigParse;
+import org.springframework.util.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import org.springframework.util.StringUtils;
+import com.alibaba.nacos.api.config.ConfigType;
+import com.alibaba.nacos.spring.util.AbstractConfigParse;
 
 /*
 <xmlSign>
@@ -79,8 +78,8 @@ public class DefaultXmlConfigParse extends AbstractConfigParse {
 	private DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 
 	@Override
-	public Properties parse(String configText) {
-		Properties properties = new Properties();
+	public Map<String, Object> parse(String configText) {
+		Map<String, Object> properties = new LinkedHashMap<String, Object>(8);
 		try {
 			Document document = factory.newDocumentBuilder()
 					.parse(new ByteArrayInputStream(configText.getBytes("UTF-8")));
@@ -131,7 +130,8 @@ public class DefaultXmlConfigParse extends AbstractConfigParse {
 		}
 	}
 
-	private void mapToProperties(String prefixName, Properties properties, Object data) {
+	private void mapToProperties(String prefixName, Map<String, Object> properties,
+			Object data) {
 		if (data instanceof List) {
 			List list = (List) data;
 			for (int i = 0; i < list.size(); i++) {
@@ -150,7 +150,7 @@ public class DefaultXmlConfigParse extends AbstractConfigParse {
 			}
 		}
 		else {
-			properties.setProperty(prefixName, String.valueOf(data));
+			properties.put(prefixName, String.valueOf(data));
 		}
 	}
 
